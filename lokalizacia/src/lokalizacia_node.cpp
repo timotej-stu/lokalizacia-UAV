@@ -23,7 +23,7 @@ private:
 public:
     PoseAverager() {
         subscriber = n.subscribe("/aruco_single/pose", 1000, &PoseAverager::poseCallback, this);
-        publisher = n.advertise<geometry_msgs::Vector3>("average_pose", 1000);
+        publisher = n.advertise<geometry_msgs::PoseStamped>("filtered_pose", 1000);
         last_received = ros::Time::now();
     }
 
@@ -61,7 +61,7 @@ public:
             if (!positions[i].empty()) {
                 double average = computeAverage(positions[i]);
                 double stdev = computeStandardDeviation(positions[i], average);
-                if ((std::abs(new_positions[i] - average) >  10.0 * std::max(stdev, 0.8)) || new_positions[2] < 0.0) {
+                if ((std::abs(new_positions[i] - average) >   std::max(stdev, 0.05)) || new_positions[2] < 0.0) {
                     ROS_WARN_STREAM("Bola detekovana pozicia, ktora je signifikantne mimo priemeru. Tato pozicia bude ignorovana.");
                     return;
                 }
@@ -96,7 +96,7 @@ public:
         }
 
         correct_inputs++;
-        publisher.publish(avg_pose);
+        publisher.publish(msg);
         writeToFile();
     }
 
